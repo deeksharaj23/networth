@@ -1,9 +1,6 @@
-import { listInvestments } from "@/app/actions/investments";
 import { GoalForm } from "@/components/goals/goal-form";
 
-export default async function NewGoalPage() {
-  const { data: investments } = await listInvestments();
-
+export default function NewGoalPage() {
   return (
     <div className="space-y-8">
       <div>
@@ -12,7 +9,7 @@ export default async function NewGoalPage() {
           Link investments you want to count toward this target.
         </p>
       </div>
-      <GoalForm investments={investments} />
+      <GoalForm />
     </div>
   );
 }

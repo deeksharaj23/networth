@@ -1,5 +1,5 @@
 import { format, parse } from "date-fns";
-import type { Investment, MonthlySnapshot } from "@/types/database";
+import type { Investment, MonthlySnapshot } from "@/types/app-data";
 
 export type Insight = {
   id: string;
@@ -12,12 +12,20 @@ export function generateInsights(input: {
   snapshot: MonthlySnapshot | null;
   prevSnapshot: MonthlySnapshot | null;
   investments: Investment[];
-  /** Sum of rows in `contributions` for the month */
   contributionsLogged: number;
   monthKey: string;
+  /** Current holdings allocation (used for cash/equity hints). */
+  categoryTotals: Record<string, number>;
 }): Insight[] {
   const out: Insight[] = [];
-  const { snapshot, prevSnapshot, investments, contributionsLogged, monthKey } = input;
+  const {
+    snapshot,
+    prevSnapshot,
+    investments,
+    contributionsLogged,
+    monthKey,
+    categoryTotals,
+  } = input;
 
   let monthLabel = monthKey;
   try {
@@ -31,15 +39,15 @@ export function generateInsights(input: {
       id: "no-snapshot",
       tone: "neutral",
       title: "No snapshot for this month yet",
-      detail: "Add investments or sync the current month to build history.",
+      detail: "Add investments or change month once data exists.",
     });
     return out;
   }
 
-  const mom = snapshot.mom_change_pct;
-  const momAbs = snapshot.mom_change_abs;
+  const mom = snapshot.changePercent;
+  const momAbs = snapshot.changeAbsolute;
 
-  if (momAbs != null && mom != null) {
+  if (momAbs !== 0 || mom !== 0) {
     if (momAbs > 0) {
       out.push({
         id: "nw-up",
@@ -57,11 +65,11 @@ export function generateInsights(input: {
     }
   }
 
-  const totals = snapshot.category_totals ?? {};
-  const assetTotal = Object.entries(totals)
+  const snapTotals = snapshot.categoryTotals ?? categoryTotals;
+  const assetTotal = Object.entries(snapTotals)
     .filter(([k]) => k !== "Liability")
     .reduce((s, [, v]) => s + Number(v), 0);
-  const cash = Number(totals["Cash"] ?? 0);
+  const cash = Number(snapTotals["Cash"] ?? 0);
   if (assetTotal > 0 && cash / assetTotal > 0.3) {
     out.push({
       id: "cash-high",
@@ -71,19 +79,18 @@ export function generateInsights(input: {
     });
   }
 
-  const equity = Number(totals["Equity"] ?? 0);
+  const equity = Number(snapTotals["Equity"] ?? 0);
   if (
-    prevSnapshot?.category_totals &&
-    snapshot.category_totals &&
-    momAbs != null &&
+    prevSnapshot?.categoryTotals &&
+    snapshot.categoryTotals &&
     momAbs > 0
   ) {
-    const pe = Number(prevSnapshot.category_totals["Equity"] ?? 0);
+    const pe = Number(prevSnapshot.categoryTotals["Equity"] ?? 0);
     const growthEq = equity - pe;
-    const others = Object.entries(totals)
+    const others = Object.entries(snapTotals)
       .filter(([k]) => k !== "Equity" && k !== "Liability")
       .reduce((s, [, v]) => s + Number(v), 0);
-    const pOthers = Object.entries(prevSnapshot.category_totals)
+    const pOthers = Object.entries(prevSnapshot.categoryTotals)
       .filter(([k]) => k !== "Equity" && k !== "Liability")
       .reduce((s, [, v]) => s + Number(v), 0);
     const growthOthers = others - pOthers;
@@ -99,7 +106,7 @@ export function generateInsights(input: {
 
   const [yy, mm] = monthKey.split("-").map(Number);
   const createdInMonth = investments.filter((i) => {
-    const d = new Date(i.created_at);
+    const d = new Date(i.createdAt);
     return d.getFullYear() === yy && d.getMonth() + 1 === mm;
   }).length;
 

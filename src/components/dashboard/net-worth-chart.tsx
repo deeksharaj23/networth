@@ -1,5 +1,7 @@
 "use client";
 
+import { formatCompact } from "@/lib/utils";
+import { format, parse } from "date-fns";
 import {
   Line,
   LineChart,
@@ -8,17 +10,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { format, parse } from "date-fns";
-import { formatCompact } from "@/lib/utils";
 
-type Point = { month: string; net_worth: number };
+type Point = { month: string; netWorth: number };
 
 export function NetWorthChart({ data }: { data: Point[] }) {
   const chartData = data.map((d) => ({
     ...d,
     label: (() => {
       try {
-        return format(parse(d.month, "yyyy-MM-dd", new Date()), "MMM yy");
+        return format(parse(`${d.month}-01`, "yyyy-MM-dd", new Date()), "MMM yy");
       } catch {
         return d.month;
       }
@@ -68,7 +68,7 @@ export function NetWorthChart({ data }: { data: Point[] }) {
             />
             <Line
               type="monotone"
-              dataKey="net_worth"
+              dataKey="netWorth"
               stroke="var(--nw-accent)"
               strokeWidth={2}
               dot={false}

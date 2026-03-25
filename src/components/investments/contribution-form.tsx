@@ -1,32 +1,25 @@
 "use client";
 
-import { recordContribution } from "@/app/actions/contributions";
+import { useWealthStore } from "@/stores/wealth-store";
 import { formatMonth, startOfMonth } from "@/lib/utils";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function ContributionForm({ investmentId }: { investmentId: string }) {
-  const router = useRouter();
+  const addContribution = useWealthStore((s) => s.addContribution);
   const [amount, setAmount] = useState("");
   const [monthKey, setMonthKey] = useState(formatMonth(startOfMonth(new Date())));
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setPending(true);
-    const res = await recordContribution({
-      investment_id: investmentId,
+    setMsg(null);
+    addContribution({
+      investmentId,
       amount: Number(amount) || 0,
-      monthKey,
+      month: monthKey,
     });
-    setPending(false);
-    if (res.error) setError(res.error);
-    else {
-      setAmount("");
-      router.refresh();
-    }
+    setAmount("");
+    setMsg("Saved.");
   }
 
   return (
@@ -59,9 +52,9 @@ export function ContributionForm({ investmentId }: { investmentId: string }) {
           />
         </div>
       </div>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
-      <button type="submit" disabled={pending} className="nw-btn-primary text-sm disabled:opacity-50">
-        {pending ? "Saving…" : "Record"}
+      {msg ? <p className="text-xs text-[var(--nw-muted)]">{msg}</p> : null}
+      <button type="submit" className="nw-btn-primary text-sm">
+        Record
       </button>
     </form>
   );

@@ -1,10 +1,8 @@
 "use client";
 
 import { shiftMonthKey } from "@/lib/utils";
-import { useUiStore } from "@/stores/ui-store";
 import Link from "next/link";
 import { format, parse } from "date-fns";
-import { useEffect } from "react";
 
 type MonthNavProps = {
   monthKey: string;
@@ -12,11 +10,6 @@ type MonthNavProps = {
 };
 
 export function MonthNav({ monthKey, availableMonths }: MonthNavProps) {
-  const setMonthKey = useUiStore((s) => s.setMonthKey);
-  useEffect(() => {
-    setMonthKey(monthKey);
-  }, [monthKey, setMonthKey]);
-
   const label = (() => {
     try {
       return format(parse(`${monthKey}-01`, "yyyy-MM-dd", new Date()), "MMMM yyyy");

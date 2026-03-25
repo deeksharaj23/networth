@@ -1,7 +1,7 @@
 "use client";
 
-import { createInvestment, updateInvestment, type InvestmentInput } from "@/app/actions/investments";
-import type { Investment, InvestmentCategory, InvestmentSubtype } from "@/types/database";
+import type { Investment, InvestmentCategory } from "@/types/app-data";
+import { useWealthStore } from "@/stores/wealth-store";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -13,7 +13,7 @@ const CATEGORIES: InvestmentCategory[] = [
   "Liability",
 ];
 
-const SUBTYPES: InvestmentSubtype[] = [
+const SUBTYPES = [
   "Savings",
   "FD",
   "Mutual Fund",
@@ -23,9 +23,9 @@ const SUBTYPES: InvestmentSubtype[] = [
   "PF",
   "NPS",
   "Credit Card",
-];
+] as const;
 
-const SUGGESTED: Partial<Record<InvestmentCategory, InvestmentSubtype[]>> = {
+const SUGGESTED: Partial<Record<InvestmentCategory, string[]>> = {
   Cash: ["Savings", "FD"],
   Equity: ["Mutual Fund", "ETF", "Stocks"],
   Gold: ["SGB"],
@@ -39,54 +39,40 @@ type Props = {
 
 export function InvestmentForm({ initial }: Props) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const addInvestment = useWealthStore((s) => s.addInvestment);
+  const updateInvestment = useWealthStore((s) => s.updateInvestment);
 
   const [name, setName] = useState(initial?.name ?? "");
   const [category, setCategory] = useState<InvestmentCategory>(
     initial?.category ?? "Equity",
   );
-  const [subtype, setSubtype] = useState<InvestmentSubtype>(
-    initial?.subtype ?? "Mutual Fund",
-  );
-  const [platform, setPlatform] = useState(initial?.platform ?? "");
-  const [currentValue, setCurrentValue] = useState(String(initial?.current_value ?? ""));
+  const [subtype, setSubtype] = useState(initial?.subtype ?? "Mutual Fund");
+  const [currentValue, setCurrentValue] = useState(String(initial?.currentValue ?? ""));
   const [monthlyContribution, setMonthlyContribution] = useState(
-    String(initial?.monthly_contribution ?? ""),
+    String(initial?.monthlyContribution ?? ""),
   );
-  const [status, setStatus] = useState<InvestmentInput["status"]>(
-    initial?.status ?? "active",
-  );
+  const [status, setStatus] = useState<Investment["status"]>(initial?.status ?? "active");
 
   const subtypeOptions = useMemo(() => {
     const sug = SUGGESTED[category];
-    if (!sug) return SUBTYPES;
+    if (!sug) return [...SUBTYPES];
     return [...new Set([...sug, ...SUBTYPES])];
   }, [category]);
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setPending(true);
-    const payload: InvestmentInput = {
+    const payload = {
       name: name.trim(),
       category,
       subtype,
-      platform: platform.trim() || null,
-      current_value: Number(currentValue) || 0,
-      monthly_contribution: monthlyContribution === "" ? 0 : Number(monthlyContribution),
+      currentValue: Number(currentValue) || 0,
+      monthlyContribution:
+        monthlyContribution === "" ? undefined : Number(monthlyContribution),
       status,
     };
-    const res = initial
-      ? await updateInvestment(initial.id, payload)
-      : await createInvestment(payload);
-    setPending(false);
-    if (res.error) {
-      setError(res.error);
-      return;
-    }
+    if (initial) updateInvestment(initial.id, payload);
+    else addInvestment(payload);
     router.push("/investments");
-    router.refresh();
   }
 
   return (
@@ -134,7 +120,7 @@ export function InvestmentForm({ initial }: Props) {
           <select
             id="subtype"
             value={subtype}
-            onChange={(e) => setSubtype(e.target.value as InvestmentSubtype)}
+            onChange={(e) => setSubtype(e.target.value)}
             className="nw-input"
           >
             {subtypeOptions.map((s) => (
@@ -144,18 +130,6 @@ export function InvestmentForm({ initial }: Props) {
             ))}
           </select>
         </div>
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm text-[var(--nw-muted)]" htmlFor="platform">
-          Platform (optional)
-        </label>
-        <input
-          id="platform"
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value)}
-          className="nw-input"
-          placeholder="Kotak, Groww…"
-        />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -192,7 +166,7 @@ export function InvestmentForm({ initial }: Props) {
         <select
           id="status"
           value={status}
-          onChange={(e) => setStatus(e.target.value as InvestmentInput["status"])}
+          onChange={(e) => setStatus(e.target.value as Investment["status"])}
           className="nw-input"
         >
           <option value="active">Active</option>
@@ -200,18 +174,11 @@ export function InvestmentForm({ initial }: Props) {
           <option value="closed">Closed</option>
         </select>
       </div>
-      {error ? (
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-      ) : null}
       <div className="flex flex-wrap gap-2 pt-2">
-        <button type="submit" disabled={pending} className="nw-btn-primary px-6 disabled:opacity-50">
-          {pending ? "Saving…" : initial ? "Save changes" : "Add investment"}
+        <button type="submit" className="nw-btn-primary px-6">
+          {initial ? "Save changes" : "Add investment"}
         </button>
-        <button
-          type="button"
-          className="nw-btn-ghost"
-          onClick={() => router.back()}
-        >
+        <button type="button" className="nw-btn-ghost" onClick={() => router.back()}>
           Cancel
         </button>
       </div>

@@ -1,34 +1,24 @@
-# Networth OS
+# Networth OS (local-first)
 
-Personal finance web app: portfolio tracking, monthly snapshots, contributions vs market growth, rule-based insights, and goals — Next.js (App Router), Tailwind CSS, Supabase, Recharts, Zustand (see `src/stores/ui-store.ts`).
+Personal finance app: portfolio tracking, monthly snapshots, contributions vs market growth, rule-based insights, and goals. **All data stays in your browser** under the localStorage key `wealth-app-data` (see `src/lib/storage/`).
 
-## Setup
+Stack: **Next.js** (App Router), **Tailwind CSS**, **Recharts**, **Zustand**.
 
-1. Create a [Supabase](https://supabase.com) project and run `supabase/schema.sql` in the SQL editor (tables + RLS).
-
-2. Copy `.env.local.example` to `.env.local` and set:
-
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-
-3. In Supabase **Authentication**, enable **Email** and (optionally) confirm email off for local dev.
-
-4. Install and run:
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), sign up, then use **Load demo data** on the home screen (or add investments manually).
+Open [http://localhost:3000](http://localhost:3000). On first visit, sample investments and history are created automatically. Use the header to **Export**, **Import**, or **Reset** data.
 
-## Project layout
+## Architecture
 
-- `src/app/(app)/` — authenticated shell: dashboard, investments, goals
-- `src/app/actions/` — server actions (CRUD, snapshots, seed demo)
-- `src/components/dashboard/` — hero, charts, insights, month navigation
-- `src/lib/insights/rules.ts` — rule-based insights
-- `src/lib/integrations/price-feed.ts` — stub for future live prices
-- `src/lib/insights/ai-layer.ts` — stub for future AI narratives
+- `src/types/app-data.ts` — serializable domain types (`AppData`, `Investment`, `MonthlySnapshot`, `Goal`, `Contribution`).
+- `src/lib/storage/types.ts` — `StorageAdapter` interface (swap for Firebase/API later).
+- `src/lib/storage/local-storage-adapter.ts` — default implementation.
+- `src/stores/wealth-store.ts` — Zustand store; loads on mount, persists after every change.
+- `src/components/providers/wealth-provider.tsx` — client bootstrap (`hydrate()`).
 
-Without env vars, the app redirects to `/setup` with configuration hints.
+No backend, env vars, or sign-in required.

@@ -1,40 +1,32 @@
 "use client";
 
-import { createGoal } from "@/app/actions/goals";
-import type { Investment } from "@/types/database";
+import { useWealthStore } from "@/stores/wealth-store";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function GoalForm({ investments }: { investments: Investment[] }) {
+export function GoalForm() {
   const router = useRouter();
+  const investments = useWealthStore((s) => s.investments);
+  const addGoal = useWealthStore((s) => s.addGoal);
   const [name, setName] = useState("");
   const [target, setTarget] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
   function toggle(id: string) {
     setSelected((s) => ({ ...s, [id]: !s[id] }));
   }
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setPending(true);
     const ids = Object.entries(selected)
       .filter(([, v]) => v)
       .map(([k]) => k);
-    const res = await createGoal({
+    addGoal({
       name: name.trim(),
-      target_amount: Number(target) || 0,
-      investment_ids: ids,
+      targetAmount: Number(target) || 0,
+      linkedInvestmentIds: ids,
     });
-    setPending(false);
-    if (res.error) setError(res.error);
-    else {
-      router.push("/goals");
-      router.refresh();
-    }
+    router.push("/goals");
   }
 
   return (
@@ -87,10 +79,9 @@ export function GoalForm({ investments }: { investments: Investment[] }) {
           )}
         </ul>
       </div>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <div className="flex gap-2">
-        <button type="submit" disabled={pending} className="nw-btn-primary px-6 disabled:opacity-50">
-          {pending ? "Creating…" : "Create goal"}
+        <button type="submit" className="nw-btn-primary px-6">
+          Create goal
         </button>
         <button type="button" className="nw-btn-ghost" onClick={() => router.back()}>
           Cancel

@@ -1,6 +1,6 @@
 "use client";
 
-import type { InvestmentCategory } from "@/types/database";
+import type { InvestmentCategory } from "@/types/app-data";
 import { formatCompact } from "@/lib/utils";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
