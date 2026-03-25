@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Networth OS
 
-## Getting Started
+Personal finance web app: portfolio tracking, monthly snapshots, contributions vs market growth, rule-based insights, and goals — Next.js (App Router), Tailwind CSS, Supabase, Recharts, Zustand (see `src/stores/ui-store.ts`).
 
-First, run the development server:
+## Setup
+
+1. Create a [Supabase](https://supabase.com) project and run `supabase/schema.sql` in the SQL editor (tables + RLS).
+
+2. Copy `.env.local.example` to `.env.local` and set:
+
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+3. In Supabase **Authentication**, enable **Email** and (optionally) confirm email off for local dev.
+
+4. Install and run:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000), sign up, then use **Load demo data** on the home screen (or add investments manually).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/app/(app)/` — authenticated shell: dashboard, investments, goals
+- `src/app/actions/` — server actions (CRUD, snapshots, seed demo)
+- `src/components/dashboard/` — hero, charts, insights, month navigation
+- `src/lib/insights/rules.ts` — rule-based insights
+- `src/lib/integrations/price-feed.ts` — stub for future live prices
+- `src/lib/insights/ai-layer.ts` — stub for future AI narratives
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Without env vars, the app redirects to `/setup` with configuration hints.
